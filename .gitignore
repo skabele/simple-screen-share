@@ -1,0 +1,10 @@
+# General
+.*
+!.git*
+
+# Play
+/logs/
+/target/
+/project/project/
+/project/target/
+/RUNNING_PID
