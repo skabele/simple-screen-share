@@ -1,5 +1,8 @@
 @()
 
-@main("Welcome Client") {
-  <h1>Welcome Client to Play!</h1>
+@main("View shared desktop") {
+    <h1>Let's view shared desktop</h1>
+
+    <video id="streamed" autoplay muted></video>
+    <script src="@routes.Assets.versioned("javascripts/client.js")" type="text/javascript"></script>
 }
