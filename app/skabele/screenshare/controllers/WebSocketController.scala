@@ -7,15 +7,15 @@ import play.api.libs.json.JsValue
 import play.api.libs.streams._
 import play.api.mvc._
 import skabele.screenshare.WithLogger
-import skabele.screenshare.actors.ChatActor
+import skabele.screenshare.actors.{ClientActor, ScreenShareActor}
 
 class WebSocketController @Inject() (implicit system: ActorSystem, materializer: Materializer) extends WithLogger {
 
   def sharedDesktopSocket = WebSocket.accept[JsValue, JsValue] { request =>
-    ActorFlow.actorRef(out => ChatActor.props("Shared desktop", out))
+    ActorFlow.actorRef(out => ScreenShareActor.props("Shared desktop", out))
   }
 
   def clientSocket = WebSocket.accept[JsValue, JsValue] { request =>
-    ActorFlow.actorRef(out => ChatActor.props("Client", out))
+    ActorFlow.actorRef(out => ClientActor.props("Client", out))
   }
 }
