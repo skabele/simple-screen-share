@@ -1,0 +1,22 @@
+@()
+
+@main("View shared desktop") {
+  <h1>Let's view shared desktop</h1>
+
+  <video id="streamed" autoplay muted></video>
+  <div>
+    <button id="connect">Connect</button>
+    <button id="disconnect" disabled>Disconnect</button>
+  </div>
+
+  <h2>Chat</h2>
+  <textarea id="chat-input" placeholder="Text to be send"></textarea>
+
+  <div>
+    <button id="send-chat" disabled>Send chat</button>
+  </div>
+
+  <textarea id="chat-messages" disabled placeholder="Chat messages"></textarea>
+
+  <script src="@routes.Assets.versioned("javascripts/client.js")" type="text/javascript"></script>
+}

@@ -1,0 +1,28 @@
+{
+  "name": "simple-screen-share",
+  "homepage": "https://github.com/skabele/simple-screen-share",
+  "authors": [
+    "Stepan Kabele <stepan.kabele@gmail.com>"
+  ],
+  "description": "Simple Screen Share with chat",
+  "main": "",
+  "keywords": [
+    "webrtc",
+    "screen",
+    "share"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "webrtc-adapter": "^3.2.0",
+    "lodash": "^4.17.4",
+    "loglevel": "^1.4.1"
+  }
+}

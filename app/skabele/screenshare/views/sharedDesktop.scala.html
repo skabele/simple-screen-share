@@ -1,0 +1,23 @@
+@()
+
+@main("Share desktop") {
+  <h1>Let's share desktop</h1>
+
+  <video id="mirror" autoplay></video>
+
+  <div>
+    <button id="share">Share desktop</button>
+    <button id="stop" disabled>Stop sharing</button>
+  </div>
+
+  <h2>Chat</h2>
+  <textarea id="chat-input" placeholder="Text to be send"></textarea>
+
+  <div>
+    <button id="send-chat" disabled>Send chat</button>
+  </div>
+
+  <textarea id="chat-messages" disabled placeholder="Chat messages"></textarea>
+
+  <script src="@routes.Assets.versioned("javascripts/shared-desktop.js")" type="text/javascript"></script>
+}
