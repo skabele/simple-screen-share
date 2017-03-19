@@ -1,49 +1,63 @@
 package skabele.screenshare.actors
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.actor._
 import play.api.libs.json._
+import WSId._
+import WsData._
+import WsMessageJson._
 
 object WsActor {
-  abstract class WsMessage(val msg: String)
-
-  case class Error(override val msg: String, text: String) extends WsMessage(msg)
-  object Error {
-    val msg = "ERROR"
-    implicit val format = Json.format[Error]
-  }
+  case class SenderEnvelope(sender: ActorRef, message: WsMessage)
 }
 
 trait WsActor extends Actor with ActorLogging {
 
-  import WsActor.Error
   def socket: ActorRef
 
   def receiveJson: Receive = {
     case json: JsValue =>
-      (json \ "msg").toOption match {
-        case Some(JsString(msg)) => handleWsMessage(msg, json)
-        case _ => send(Error(Error.msg, "Message does not contain required string field 'msg'"))
+      ((json \ "id").toOption, (json \ "data").toOption) match {
+        case (Some(JsString(id)), Some(data: JsObject)) =>
+          handleWsMessage(id, data)
+        case (Some(JsString(id)), None) =>
+          handleWsMessage(id, JsObject(Seq()))
+        case _ =>
+          sendErrorToWS(s"Message $json does not contains string field 'id' or (optional) 'data' field is not object")
       }
   }
 
-  def send[T: Writes](message: T): Unit = {
+  private def handleWsMessage(id: String, data: JsObject): Unit =
+    WSId.withNameOption(id) match {
+      case None => sendErrorToWS(s"Message has 'id' with invalid value '$id'")
+      case Some(wsId) => handleWsMessage(wsId, data)
+    }
+
+  def handleWsMessage(id: WSId, data: JsObject): Unit = id match {
+    case ERROR => processData[Error](id, data) {
+        error => log.warning("Error reported over WS: " + error)
+      }
+    case other => sendErrorToWS(s"Unprocessed message id=$id data=$data (maybe send to wrong socket?)")
+  }
+
+  def sendToWS(message: WsMessage): Unit = {
     log.debug(s"Sending to ws: $message")
     socket ! Json.toJson(message)
   }
 
-  def sendError(text: String): Unit = send(Error(Error.msg, text))
+  def sendErrorToWS(text: String): Unit = sendToWS(WsMessage(ERROR, Error(text)))
 
-  def validationError(json: JsValue, e: JsError): Unit =
-    sendError(s"Unable to validate message: $json errors: " + JsError.toFlatForm(e))
+  def processEmptyData(id: WSId, data: JsObject)(process: () => Unit): Unit =
+    if (data.value.isEmpty) {
+      process()
+    } else {
+      sendErrorToWS(s"Unable to validate id=$id data=$data - expecting empty data")
+    }
 
-  def handleWsMessage(msg: String, json: JsValue): Unit = msg match {
-    case Error.msg =>
-      json.validate[Error] match {
-        case s: JsSuccess[Error] =>
-          log.warning("Error reported over WS: " + s.get.text)
-        case e: JsError => validationError(json, e)
-      }
-    case other => sendError(s"Unknown message type msg='$other'")
-  }
-
+  def processData[T : Reads](id: WSId, data: JsObject)(process: T => Unit): Unit =
+    data.validate[T] match {
+      case success: JsSuccess[T] =>
+        process(success.get)
+      case error: JsError =>
+        sendErrorToWS(s"Unable to validate id=$id data=$data - errors: " + JsError.toFlatForm(error))
+    }
 }

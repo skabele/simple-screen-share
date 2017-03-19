@@ -12,10 +12,12 @@ import skabele.screenshare.actors.{ClientActor, ScreenShareActor}
 class WebSocketController @Inject() (implicit system: ActorSystem, materializer: Materializer) extends WithLogger {
 
   def sharedDesktopSocket = WebSocket.accept[JsValue, JsValue] { request =>
+    logger.info("initialazing Screen Share")
     ActorFlow.actorRef(out => ScreenShareActor.props("Shared desktop", out))
   }
 
   def clientSocket = WebSocket.accept[JsValue, JsValue] { request =>
+    logger.info("initialazing Client")
     ActorFlow.actorRef(out => ClientActor.props("Client", out))
   }
 }

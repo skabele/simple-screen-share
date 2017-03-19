@@ -12,6 +12,8 @@ libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1
 libraryDependencies += "com.beachape" %% "enumeratum" % "1.5.8"
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.4.17"
 libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.4.17"
+libraryDependencies += "com.beachape" %% "enumeratum" % "1.5.8"
+libraryDependencies += "com.beachape" %% "enumeratum-play-json" % "1.5.8"
 
 // Adds additional packages into Twirl
 //TwirlKeys.templateImports += "skabele.controllers._"

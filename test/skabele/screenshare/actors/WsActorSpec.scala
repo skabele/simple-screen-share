@@ -1,6 +1,6 @@
 package skabele.screenshare.actors
 
-import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.actor._
 import akka.testkit._
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
@@ -26,7 +26,7 @@ class WsActorSpec extends TestKit(ActorSystem("WsActorSpec", ConfigFactory.parse
     val wsActor = system.actorOf(Props(new BareWsActor(socket.ref)))
 
     def expectErrorMessage(probe: TestProbe): Unit = probe.expectMsgPF(duration) {
-      case json: JsObject if json.value.get("msg").contains(JsString("ERROR")) =>
+      case json: JsObject if (json \ "id").toOption.contains(JsString("ERROR")) =>
     }
   }
 
@@ -38,19 +38,19 @@ class WsActorSpec extends TestKit(ActorSystem("WsActorSpec", ConfigFactory.parse
     }
 
     "report error on external message of unknown type" in new Helper {
-      wsActor ! Json.parse(""" {"msg": "NONEXISTENT-MESSAGE-TYPE"} """)
+      wsActor ! Json.parse(""" {"id": "NONEXISTENT-MESSAGE-TYPE"} """)
       expectErrorMessage(socket)
     }
 
     "report error on external message of known type but with wrong JSON data" in new Helper {
-      wsActor ! Json.parse(""" {"msg": "ERROR", "foo": "bar"} """)
+      wsActor ! Json.parse(""" {"id": "ERROR", "foo": "bar"} """)
       expectErrorMessage(socket)
     }
 
-    "log warning on ERROR ws message" in new Helper {
+    "log warning on external ERROR ws message" in new Helper {
       val errMsg = "Some error message"
       EventFilter.warning(pattern = errMsg, occurrences = 1) intercept {
-        wsActor ! Json.parse(s""" {"msg": "ERROR", "text": "$errMsg"} """)
+        wsActor ! Json.parse(s""" {"id": "ERROR", "data": {"text": "$errMsg"} } """)
       }
     }
 

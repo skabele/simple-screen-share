@@ -27,5 +27,6 @@ log.setLevel('debug')
 ## Sources & similar projects
 
 * Official [WebRtc codelab](https://codelabs.developers.google.com/codelabs/webrtc-web/)
-* Muaz Khan's [WebRTC-Experiment](Muaz Khan https://github.com/muaz-khan/WebRTC-Experiment)
+* Muaz Khan's [WebRTC-Experiment](https://github.com/muaz-khan/WebRTC-Experiment)
+* [Chrome screensharing extension](https://github.com/bistri/screensharing-extensions) used to enable screen sharing
 * [Screen sharing](https://github.com/ArseniKavalchuk/share-the-screen) in just 300 lines of code using Motion JPEG over HTTP

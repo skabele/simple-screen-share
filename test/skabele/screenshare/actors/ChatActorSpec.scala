@@ -1,10 +1,13 @@
 package skabele.screenshare.actors
 
-import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.actor._
 import akka.testkit._
 import org.scalatest._
 import play.api.libs.json._
-import skabele.screenshare.actors.ChatActor.{ChatEnvelope, ChatMessage}
+import WSId._
+import WsData._
+import WsMessageJson._
+import WsActor.SenderEnvelope
 
 import scala.concurrent.duration._
 
@@ -30,23 +33,23 @@ class ChatActorSpec extends TestKit(ActorSystem("ChatActorSpec")) with ImplicitS
 
     "forward external CHAT message to eventStream" in new Helper {
       val eventStreamProbe = TestProbe()
-      system.eventStream.subscribe(eventStreamProbe.ref, classOf[ChatEnvelope])
-      chatActor ! Json.parse(""" {"msg": "CHAT", "text": "foo bar baz"} """)
-      eventStreamProbe.expectMsg(duration, ChatEnvelope(chatActor, ChatMessage(ChatMessage.msg, "foo bar baz")))
+      system.eventStream.subscribe(eventStreamProbe.ref, classOf[SenderEnvelope])
+      chatActor ! Json.parse(""" {"id": "CHAT", "data": {"text": "foo bar baz"} } """)
+      eventStreamProbe.expectMsg(duration, SenderEnvelope(chatActor, WsMessage(CHAT,Chat("foo bar baz"))))
       socket.expectNoMsg()
     }
 
     "on ChatEnvelope send CHAT message to socket" in new Helper {
-      val chatMessage = ChatMessage(ChatMessage.msg, "Ignore me!")
+      val chatMessage = WsMessage(CHAT,Chat("Read me"))
       val sender = TestProbe()
-      chatActor ! ChatEnvelope(sender.ref, chatMessage)
+      chatActor ! SenderEnvelope(sender.ref, chatMessage)
       socket.expectMsg(duration, Json.toJson(chatMessage))
       sender.expectNoMsg()
     }
 
     "ignore ChatEnvelope originated from this actor" in new Helper {
-      val chatMessage = ChatMessage(ChatMessage.msg, "Ignore me!")
-      chatActor ! ChatEnvelope(chatActor, chatMessage)
+      val chatMessage = WsMessage(CHAT,Chat("Ignore me"))
+      chatActor ! SenderEnvelope(chatActor, chatMessage)
       socket.expectNoMsg(duration)
     }
 

@@ -8,12 +8,12 @@ var chatMessages = document.querySelector('textarea#chat-messages');
 sendChatBtn.onclick = sendChat;
 
 function openWebSocket() {
-  var socket = new WebSocket('ws://' + location.host + '/shared-desktop');
+  var socket = createWS();
 
   socket.onopen = function () {
     log.info('WebSocket opened');
     sendChatBtn.disabled = false;
-    send({msg: 'READY'});
+    onWSConnected();
   };
 
   socket.onerror = function (error) {
@@ -23,17 +23,10 @@ function openWebSocket() {
   socket.onmessage = function (event) {
     var message = JSON.parse(event.data);
     log.debug('WebSocket message', message);
-    if (!_.has(message, 'msg')) {
+    if (!_.has(message, 'id')) {
       log.warn("WS message without msg field received", message);
-    } else switch(message.msg) {
-      case "CHAT":
-        chatMessages.value = chatMessages.value + message.text + '\n';
-        break;
-      case "ERROR":
-        log.error("Server reports error", message.text);
-        break;
-      default:
-        log.warning("Unexpected message type received", message);
+    } else {
+        onWSMessage(message);
     }
   }
 
@@ -50,6 +43,11 @@ function send(payload) {
 function sendChat() {
   var text = chatInput.value
   if (text != '') {
-    send({msg: 'CHAT', text: text});
+    send({id: 'CHAT', text: text});
   }
 }
+
+window.onbeforeunload = function() {
+  //sendMessage('bye');
+  // TODO
+};
