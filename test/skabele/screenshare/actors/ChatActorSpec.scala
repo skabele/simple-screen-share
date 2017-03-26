@@ -3,11 +3,9 @@ package skabele.screenshare.actors
 import akka.actor._
 import akka.testkit._
 import org.scalatest._
-import play.api.libs.json._
-import WSId._
 import WsData._
-import WsMessageJson._
-import WsActor.SenderEnvelope
+import WsId._
+import InternalMessage._
 
 import scala.concurrent.duration._
 
@@ -19,37 +17,38 @@ class ChatActorSpec extends TestKit(ActorSystem("ChatActorSpec")) with ImplicitS
   }
 
   class Helper {
-    val duration = 300.millis
+    val duration = 100.millis
     val socket = TestProbe()
 
     class BareChatActor(override val socket: ActorRef) extends ChatActor {
-      def name = "Test"
-      override def receive = receiveJson orElse receiveChat
+      var name = "Test"
+      override def receive = receiveChat orElse receiveError
     }
     val chatActor = system.actorOf(Props(new BareChatActor(socket.ref)))
   }
 
   "ChatActor" should {
 
-    "forward external CHAT message to eventStream" in new Helper {
+    "on SEND_CHAT publish ChatPublished to eventStream" in new Helper {
       val eventStreamProbe = TestProbe()
-      system.eventStream.subscribe(eventStreamProbe.ref, classOf[SenderEnvelope])
-      chatActor ! Json.parse(""" {"id": "CHAT", "data": {"text": "foo bar baz"} } """)
-      eventStreamProbe.expectMsg(duration, SenderEnvelope(chatActor, WsMessage(CHAT,Chat("foo bar baz"))))
-      socket.expectNoMsg()
+      system.eventStream.subscribe(eventStreamProbe.ref, classOf[ChatPublished])
+      val msg = "foo bar baz"
+      chatActor ! WsMessage(SEND_CHAT, SendChat(msg))
+      eventStreamProbe.expectMsg(duration, ChatPublished(chatActor, "Test", msg))
+      socket.expectNoMsg(duration)
     }
 
-    "on ChatEnvelope send CHAT message to socket" in new Helper {
-      val chatMessage = WsMessage(CHAT,Chat("Read me"))
-      val sender = TestProbe()
-      chatActor ! SenderEnvelope(sender.ref, chatMessage)
-      socket.expectMsg(duration, Json.toJson(chatMessage))
-      sender.expectNoMsg()
+    "on ChatPublished send CHAT_MSG to socket" in new Helper {
+      val otherActor = TestProbe()
+      val msg = "foo bar baz"
+      chatActor ! ChatPublished(otherActor.ref, "Test", msg)
+      socket.expectMsg(duration, WsMessage(CHAT_MSG, ChatMsg("Test", msg)))
+      socket.expectNoMsg(duration)
     }
 
-    "ignore ChatEnvelope originated from this actor" in new Helper {
-      val chatMessage = WsMessage(CHAT,Chat("Ignore me"))
-      chatActor ! SenderEnvelope(chatActor, chatMessage)
+    "if ChatPublished published by itself" in new Helper {
+      val msg = "foo bar baz"
+      chatActor ! ChatPublished(chatActor, "Test", msg)
       socket.expectNoMsg(duration)
     }
 

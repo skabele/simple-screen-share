@@ -5,6 +5,7 @@ log.setDefaultLevel("info");
 var chatInput = document.querySelector('textarea#chat-input');
 var sendChatBtn = document.querySelector('button#send-chat');
 var chatMessages = document.querySelector('textarea#chat-messages');
+var chatName = document.querySelector('input#chat-name');
 sendChatBtn.onclick = sendChat;
 
 function openWebSocket() {
@@ -43,11 +44,6 @@ function send(payload) {
 function sendChat() {
   var text = chatInput.value
   if (text != '') {
-    send({id: 'CHAT', text: text});
+    send({id: 'SEND_CHAT', data: {text: text} });
   }
 }
-
-window.onbeforeunload = function() {
-  //sendMessage('bye');
-  // TODO
-};

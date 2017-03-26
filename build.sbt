@@ -20,3 +20,20 @@ libraryDependencies += "com.beachape" %% "enumeratum-play-json" % "1.5.8"
 
 // Adds additional packages into conf/routes
 // play.sbt.routes.RoutesKeys.routesImport += "skabele.binders._"
+
+import AssemblyKeys._
+
+assemblySettings
+
+mainClass in assembly := Some("play.core.server.ProdServerStart")
+
+fullClasspath in assembly += Attributed.blank(PlayKeys.playPackageAssets.value)
+
+mergeStrategy in assembly := {
+  case x if x.endsWith("io.netty.versions.properties") => MergeStrategy.first
+  case x =>
+    val oldStrategy = (mergeStrategy in assembly).value
+    oldStrategy(x)
+}
+
+jarName in assembly := "simple-screen-share.jar"

@@ -1,53 +1,68 @@
 package skabele.screenshare.actors
 
-import akka.actor.{ActorRef, Props}
-import play.api.libs.json.{JsObject, JsValue}
-import WSId._
+import akka.actor.{ActorRef, Props, Terminated}
+import WsId._
 import WsData._
-import WsMessageJson._
-import WsActor.SenderEnvelope
+import InternalMessage._
+import akka.event.LoggingReceive
 
 object ClientActor {
-  def props(name: String, socket: ActorRef) = Props(new ClientActor(name, socket))
+  def props(socket: ActorRef) = Props(new ClientActor(socket))
+
 }
 
-class ClientActor(override val name: String, override val socket: ActorRef) extends ChatActor {
-
-  var isReady = false
+class ClientActor(override val socket: ActorRef) extends ChatActor {
+  var name = "Anonymous Client"
   var screen: Option[ActorRef] = None
+  var isReady = false
 
-  override def handleWsMessage(id: WSId, data: JsObject): Unit = id match {
-    case CLIENT_READY =>
-      processEmptyData(id, data) { () =>
-        isReady = true
-        log.info(s"Client $name to BUS: $CLIENT_READY")
-        context.system.eventStream.publish(SenderEnvelope(self, WsMessage(CLIENT_READY)))
-      }
-    case RTC_ICE_CANDIDATE  =>
-      processData[RTCIceCandidate](id, data) { candidate =>
-        screen.foreach(_ ! WsMessage(RTC_ICE_CANDIDATE, candidate))
-      }
-    case RTC_SESSION_DESCRIPTION =>
-      processData[RTCSessionDescription](id, data) { description =>
-        screen.foreach(_ ! WsMessage(RTC_SESSION_DESCRIPTION, description))
-      }
-    case _ => super.handleWsMessage(id, data)
+  override def preStart(): Unit = {
+    context.system.eventStream.subscribe(self, classOf[ScreenReadyToShare])
+    super.preStart()
   }
 
   def receiveClient: Receive = {
-    case SenderEnvelope(screenRef, msg @ WsMessage(SCREEN_READY, _)) =>
-      screen = Some(screenRef)
+    case WsMessage(CLIENT_READY, ClientReady(_name)) =>
       if (isReady) {
-        log.info(s"ClientActor $name to screen: ClientReady")
-        screenRef ! SenderEnvelope(self, msg)
+        logWarnAndSendErrorToWS(s"Client is already ready with name='$name'")
+      } else {
+        isReady = true
+        name = _name
+        context.system.eventStream.publish(ClientReadyToListen(self, name, isResponse = false))
       }
-    case msg @ WsMessage(SCREEN_READY, _) =>
-      sendToWS(msg)
-    case msg @ WsMessage(RTC_ICE_CANDIDATE, _) =>
-      sendToWS(msg)
-    case msg @ WsMessage(RTC_SESSION_DESCRIPTION, _) =>
-      sendToWS(msg)
+
+    case WsMessage(RTC_ICE_CANDIDATE, candidate: RTCIceCandidate) =>
+      screen.foreach(_ ! IceCandidate(candidate))
+
+    case WsMessage(RTC_SESSION_DESCRIPTION, session: RTCSessionDescription) =>
+      screen.foreach(_ ! Session(session))
+
+    case ScreenReadyToShare(ref, screenName, isResponse) =>
+      screen = Some(ref)
+      context.watch(ref)
+      if (!isResponse) {
+        ref ! ClientReadyToListen(self, name, isResponse = true)
+      }
+      if (isReady) {
+        socket ! WsMessage(SCREEN_READY, ScreenReady(screenName))
+      }
+
+    case NameAlreadyTaken() =>
+      socket ! WsMessage(NAME_ALREADY_TAKEN, NoData())
+      context.stop(self)
+
+    case Terminated(ref) if screen.contains(ref) =>
+      socket ! WsMessage(SCREEN_LEFT, NoData())
+      screen = None
+
+    case IceCandidate(candidate) =>
+      socket ! WsMessage(RTC_ICE_CANDIDATE, candidate)
+
+    case Session(session) =>
+      socket ! WsMessage(RTC_SESSION_DESCRIPTION, session)
   }
 
-  override def receive: Receive = receiveJson orElse receiveChat orElse receiveClient
+  override def receive: Receive = LoggingReceive {
+    receiveClient orElse receiveChat orElse receiveError
+  }
 }

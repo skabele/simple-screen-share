@@ -5,18 +5,19 @@
 
   <video id="remote-screen" autoplay muted></video>
   <div>
+    <label for="chat-name">Chat name:</label>
+    <input id="chat-name" type="text" placeholder="Your chat name"></input>
     <button id="connect">Connect</button>
     <button id="disconnect" disabled>Disconnect</button>
   </div>
 
   <h2>Chat</h2>
-  <textarea id="chat-input" placeholder="Text to be send"></textarea>
+  <textarea id="chat-input" placeholder="Text to be send" rows="1" cols="53"></textarea>
 
   <div>
     <button id="send-chat" disabled>Send chat</button>
   </div>
-
-  <textarea id="chat-messages" disabled placeholder="Chat messages"></textarea>
+  <textarea id="chat-messages" disabled placeholder="Chat messages" rows="20" cols="53"></textarea>
 
   <script src="@routes.Assets.versioned("javascripts/client.js")" type="text/javascript"></script>
 }

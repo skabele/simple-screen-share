@@ -8,11 +8,14 @@ disconnectBtn.onclick = disconnect;
 
 var remoteVideo = document.querySelector('video#remote-screen');
 var remoteStream;
+var clientName;
 
 function connect() {
   connectBtn.disabled = true;
   disconnectBtn.disabled = false;
   sendChatBtn.disabled = false;
+  clientName = chatName.value;
+  chatName.disabled = true;
   socket = openWebSocket();
 }
 
@@ -20,8 +23,8 @@ function disconnect() {
   connectBtn.disabled = false;
   disconnectBtn.disabled = true;
   sendChatBtn.disabled = true;
+  chatName.disabled = false;
 
-  send({id: 'BYE'});
   socket.close();
   socket = null;
 }
@@ -31,17 +34,20 @@ function createWS() {
 }
 
 function onWSConnected() {
-  send({id: 'CLIENT_READY'});
+  send({id: 'CLIENT_READY', data: {clientName: clientName} });
 }
 
 function onWSMessage(message) {
   switch(message.id) {
-    case "CHAT":
-      chatMessages.value = chatMessages.value + message.data.text + '\n';
+    case "CHAT_MSG":
+      chatMessages.value = chatMessages.value + message.data.name + ': ' + message.data.text + '\n';
       break;
-    case "ERROR":
+    case "SERVER_ERROR":
       log.error("Server reports error:", message.data.text);
       break;
+    case "NAME_ALREADY_TAKEN":
+      alert("This chat name is already taken - please choose another one");
+      disconnect();
     case "SCREEN_READY":
       log.info("SCREEN_READY");
       break;
@@ -100,7 +106,6 @@ function onRemoteStreamAdded(event) {
 
 function onRemoteStreamRemoved(event) {
   log.debug('Remote stream removed', event);
-  // TODO some action?
 }
 
 function onCreateOfferError(event) {

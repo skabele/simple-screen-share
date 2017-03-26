@@ -5,6 +5,8 @@ import akka.testkit._
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
 import play.api.libs.json._
+import WsData._
+import WsId._
 
 import scala.concurrent.duration._
 
@@ -17,40 +19,41 @@ class WsActorSpec extends TestKit(ActorSystem("WsActorSpec", ConfigFactory.parse
   }
 
   class Helper {
-    val duration = 300.millis
+    val duration = 100.millis
     val socket = TestProbe()
 
     class BareWsActor(override val socket: ActorRef) extends WsActor {
-      override def receive = receiveJson
+      override def receive = receiveError
+      var name = "Test"
     }
     val wsActor = system.actorOf(Props(new BareWsActor(socket.ref)))
 
-    def expectErrorMessage(probe: TestProbe): Unit = probe.expectMsgPF(duration) {
-      case json: JsObject if (json \ "id").toOption.contains(JsString("ERROR")) =>
+    def expectServerError(probe: TestProbe): Unit = probe.expectMsgPF(duration) {
+      case WsMessage(SERVER_ERROR, _) =>
     }
   }
 
   "WsActor" should {
 
-    "report error on external message without msg property" in new Helper {
-      wsActor ! Json.parse(""" {"foo": "bar"} """)
-      expectErrorMessage(socket)
-    }
-
-    "report error on external message of unknown type" in new Helper {
-      wsActor ! Json.parse(""" {"id": "NONEXISTENT-MESSAGE-TYPE"} """)
-      expectErrorMessage(socket)
-    }
-
-    "report error on external message of known type but with wrong JSON data" in new Helper {
-      wsActor ! Json.parse(""" {"id": "ERROR", "foo": "bar"} """)
-      expectErrorMessage(socket)
-    }
-
-    "log warning on external ERROR ws message" in new Helper {
+    "log warning on FRONTEND_ERROR" in new Helper {
       val errMsg = "Some error message"
       EventFilter.warning(pattern = errMsg, occurrences = 1) intercept {
-        wsActor ! Json.parse(s""" {"id": "ERROR", "data": {"text": "$errMsg"} } """)
+        wsActor ! WsMessage(FRONTEND_ERROR, Error(errMsg))
+      }
+    }
+
+    "log warning and publish SERVER_ERROR on PARSE_ERROR" in new Helper {
+      val jsonAsStr = """{"foo": "bar"}"""
+      EventFilter.warning(pattern = "none of recognised messages", occurrences = 1) intercept {
+        wsActor ! WsMessage(PARSE_ERROR, Error(jsonAsStr))
+      }
+      expectServerError(socket)
+    }
+
+    "log error on unhandled message" in new Helper {
+      case class UnhandledMessage()
+      EventFilter.error(pattern = "unhandled message", occurrences = 1) intercept {
+        wsActor ! UnhandledMessage
       }
     }
 

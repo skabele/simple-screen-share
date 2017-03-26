@@ -7,14 +7,39 @@ shareBtn.onclick = startSharing;
 stopBtn.onclick = stopSharing;
 
 var sharedStream;
-
-var isStarted = false;
 var requestId;
+
+var clients = {};
+
+function getClient(name) {
+  if (!clients[name]) {
+    log.warn("Client name='" + name + "' does not exists. Clients:", clients);
+    return false;
+  } else {
+    return clients[name];
+  }
+}
+
+function addClient(name) {
+  if (clients[name]) {
+    log.error("Client name='" + name + "' already exists. Clients:", clients);
+    return clients[name];
+  }
+  var client = {
+    name: name,
+    isStarted: false,
+    isReady: false,
+    pc: null
+  };
+  clients[name] = client;
+  return client;
+}
 
 function streamReceived(stream) {
   sharedStream = stream;
   mirrorVideo.srcObject = stream;
   log.info('Local camera stream received');
+  startReadyClients();
 }
 
 function startSharing() {
@@ -44,7 +69,6 @@ function stopSharing () {
     track.stop();
   });
   sharedStream = null;
-  send({id: 'BYE'});
   socket.close();
   socket = null;
   log.info('Sharing stopped');
@@ -55,75 +79,135 @@ function createWS() {
 }
 
 function onWSConnected() {
-  send({id: 'SCREEN_READY'});
+  send({id: 'SCREEN_READY', data: {name: chatName.value}});
 }
 
 function onWSMessage(message) {
+  var client, name;
   switch(message.id) {
-    case "CHAT":
-      chatMessages.value = chatMessages.value + message.data.text + '\n';
+
+    case "CHAT_MSG":
+      chatMessages.value = chatMessages.value + message.data.name + ': ' + message.data.text + '\n';
       break;
-    case "ERROR":
+
+    case "SERVER_ERROR":
       log.error("Server reports error:", message.data.text);
       break;
+
     case "CLIENT_READY":
-      maybeStart();
+      name = message.data.clientName;
+      if (!clients[name]) {
+        client = addClient(name);
+      } else {
+        client = clients[name];
+        client.name = name;
+      }
+      client.isReady = true;
+      log.debug("On CLIENT_READY client data", client, message.data);
+      if (typeof sharedStream !== 'undefined') {
+        startClient(client);
+      }
       break;
-    case "RTC_SESSION_DESCRIPTION":
-        if (pc === null) {
-          log.error("pc is null")
+
+    case "CLIENT_LEFT":
+      name = message.data.clientName;
+      if (clients[name] && clients[name].pc !== null) {
+        clients[name].pc.close();
+      }
+      delete clients[message.data.clientName];
+      break;
+
+    case "RTC_SESSION_DESCRIPTION_WITH_NAME":
+      client = getClient(message.data.clientName);
+      if (client) {
+        if (client.pc === null) {
+          log.error("clients['first'].pc is null")
+        } else {
+          client.pc.setRemoteDescription(new RTCSessionDescription(message.data.session));
         }
-        pc.setRemoteDescription(new RTCSessionDescription(message.data));
+      }
       break;
-    case "RTC_ICE_CANDIDATE":
-        if (pc === null) {
-          createPeerConnection();
+
+    case "RTC_ICE_CANDIDATE_WITH_NAME":
+      client = getClient(message.data.clientName);
+      if (client) {
+        if (client.pc === null) {
+          createPeerConnection(client);
         }
-        var candidate = new RTCIceCandidate(message.data);
-        pc.addIceCandidate(candidate);
+        var candidate = new RTCIceCandidate(message.data.candidate);
+        client.pc.addIceCandidate(candidate);
+      }
       break;
+
     default:
       log.warn("Unexpected message type received", message);
   }
 }
 
-function maybeStart() {
-  console.log('maybeStart() ', isStarted, sharedStream);
-  if (!isStarted && typeof sharedStream !== 'undefined') {
-    log.info('creating peer connection');
-    createPeerConnection();
-    pc.addStream(sharedStream);
-    isStarted = true;
-    log.debug('Sending WebRtc offer to peer');
-    pc.createOffer(setLocalAndSendMessage, onCreateOfferError);
-  }
+function startClient(_client) {
+  var client = _client;
+  log.debug('startClient() - creating peer connection', client);
+  createPeerConnection(client);
+  client.pc.addStream(sharedStream);
+  client.isStarted = true;
+  log.debug('Sending WebRtc offer to peer');
+
+  var setLocalAndSendMessage = function(sessionDescription) {
+    client.pc.setLocalDescription(sessionDescription);
+    log.debug('setLocalAndSendMessage sending message', sessionDescription);
+    send({
+      id: 'RTC_SESSION_DESCRIPTION_WITH_NAME',
+      data: {
+        clientName: client.name,
+        session: sessionDescription
+      }
+    });
+  };
+
+  client.pc.createOffer(setLocalAndSendMessage, onCreateOfferError);
 }
 
-var pc;
+function startReadyClients() {
+  if (typeof sharedStream === 'undefined') {
+    log.debug('startReadyClients() stream not ready');
+    return;
+  }
+  _.forEach(clients, function(client){
+    if (!client.isStarted && client.isReady) {
+      startClient(client);
+    } else {
+      log.debug('startReadyClients() not starting client', client);
+    }
+  });
+}
 
-function createPeerConnection() {
+
+function createPeerConnection(_client) {
   try {
-    pc = new RTCPeerConnection(null);
-    pc.onicecandidate = onIceCandidate;
-    pc.onaddstream = onRemoteStreamAdded;
-    pc.onremovestream = onRemoteStreamRemoved;
+    var client = _client;
+    client.pc = new RTCPeerConnection(null);
+    var onIceCandidate = function(event) {
+      log.debug('icecandidate event: ', event);
+      if (event.candidate) {
+        send({
+          id: 'RTC_ICE_CANDIDATE_WITH_NAME',
+          data: {
+            clientName: client.name,
+            candidate: event.candidate
+          }
+        });
+      } else {
+        log.debug('End of ICE candidates.');
+      }
+    };
+
+    client.pc.onicecandidate = onIceCandidate;
+    client.pc.onaddstream = onRemoteStreamAdded;
+    client.pc.onremovestream = onRemoteStreamRemoved;
     log.debug('Created RTCPeerConnnection');
   } catch (e) {
     log.debug('Failed to create PeerConnection, exception: ' + e.message);
     alert('Cannot create RTCPeerConnection object.');
-    return;
-  }
-}
-
-function onIceCandidate(event) {
-  log.debug('icecandidate event: ', event);
-  if (event.candidate) {
-    send({
-      id: 'RTC_ICE_CANDIDATE',
-      data: event.candidate
-    });
-  } else {
-    log.debug('End of ICE candidates.');
   }
 }
 
@@ -139,20 +223,6 @@ function onCreateOfferError(event) {
   log.warn('createOffer() error: ', event);
 }
 
-function doAnswer() {
-  log.debug('Sending answer to peer.');
-  pc.createAnswer().then(
-    setLocalAndSendMessage,
-    onCreateSessionDescriptionError
-  );
-}
-
-function setLocalAndSendMessage(sessionDescription) {
-  pc.setLocalDescription(sessionDescription);
-  log.debug('setLocalAndSendMessage sending message', sessionDescription);
-  send({id: 'RTC_SESSION_DESCRIPTION', data: sessionDescription});
-}
-
 function onCreateSessionDescriptionError(error) {
   log.error('Failed to create session description: ' + error.toString());
 }
@@ -161,10 +231,10 @@ function onCreateSessionDescriptionError(error) {
 
 window.addEventListener('message', function (event) {
   log.debug("MESSAGE", event);
-  if (typeof event.data == "object") {
+  if (typeof event.data === "object") {
     var data = event.data;
 
-    if(data.answer == 1 && data.requestId === requestId && data.state == "completed") {
+    if(data.answer == 1 && data.requestId === requestId && data.state === "completed") {
 
       var screen_constraints = {
         //audio: false,
@@ -184,7 +254,7 @@ window.addEventListener('message', function (event) {
       navigator.getUserMedia(screen_constraints, function (stream) {
           streamReceived(stream);
       }, function (error) {
-         log.error("webkitGetUserMedia() failed", error)
+         log.error("webkitGetUserMedia() failed", error);
          alert('Unable to start sharing - webkitGetUserMedia() failed: ' + error.name);
       });
     }
