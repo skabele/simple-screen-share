@@ -1,8 +1,8 @@
 'use strict';
 
 
-var connectBtn = document.querySelector('button#connect');
-var disconnectBtn = document.querySelector('button#disconnect');
+var connectBtn = document.querySelector('a#connect');
+var disconnectBtn = document.querySelector('a#disconnect');
 connectBtn.onclick = connect;
 disconnectBtn.onclick = disconnect;
 

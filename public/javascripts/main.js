@@ -3,7 +3,7 @@
 log.setDefaultLevel("info");
 
 var chatInput = document.querySelector('textarea#chat-input');
-var sendChatBtn = document.querySelector('button#send-chat');
+var sendChatBtn = document.querySelector('a#send-chat');
 var chatMessages = document.querySelector('textarea#chat-messages');
 var chatName = document.querySelector('input#chat-name');
 sendChatBtn.onclick = sendChat;

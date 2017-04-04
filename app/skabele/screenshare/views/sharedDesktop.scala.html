@@ -1,25 +1,33 @@
 @()
 
 @main("Share desktop") {
-  <h1>Let's share desktop</h1>
+<link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/shared-desktop.css")">
 
-  <video id="mirror" autoplay></video>
+<div class="container">
+  <h1>Simple Screen Share</h1>
 
-  <div>
-    <label for="chat-name">Chat name:</label>
-    <input id="chat-name" type="text" placeholder="Chat name" value="Presenter"></input>
-    <button id="share">Share desktop</button>
-    <button id="stop" disabled>Stop sharing</button>
-  </div>
+  <video id="mirror" class="hidden" autoplay></video>
 
-  <h2>Chat</h2>
-  <textarea id="chat-input" placeholder="Text to be send" rows="1" cols="53"></textarea>
-
-  <div>
-    <button id="send-chat" disabled>Send chat</button>
-  </div>
-
-  <textarea id="chat-messages" disabled placeholder="Chat messages" rows="20" cols="53"></textarea>
+  <form>
+    <div class="form-group">
+      <label for="chat-name">Chat name:</label>
+      <input id="chat-name" type="text" class="form-control" placeholder="h" value="Presenter"></input>
+    </div>
+    <div class="form-group">
+      <a class="btn btn-success" id="share" href="#"><span class="glyphicon glyphicon-play"></span> Share desktop</a>
+      <a class="btn btn-warning" id="stop"  href="#" disabled><span class="glyphicon glyphicon-stop"></span> Stop sharing</a>
+    </div>
+    <div class="form-group">
+      <textarea id="chat-input" type="text" class="form-control" placeholder="Message to be send to chat" rows="2" cols="53"></textarea>
+    </div>
+    <div class="form-group">
+      <a class="btn btn-info" class="form-control" id="send-chat" disabled><span class="glyphicon glyphicon-pencil"></span> Send chat</a>
+    </div>
+    <div class="form-group">
+      <textarea id="chat-messages" class="form-control" disabled placeholder="Chat messages" rows="20" cols="53"></textarea>
+    </div>
+  </form>
 
   <script src="@routes.Assets.versioned("javascripts/shared-desktop.js")" type="text/javascript"></script>
+</div>
 }

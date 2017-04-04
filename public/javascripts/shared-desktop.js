@@ -1,8 +1,8 @@
 'use strict';
 
 var mirrorVideo = document.querySelector('video#mirror');
-var shareBtn = document.querySelector('button#share');
-var stopBtn = document.querySelector('button#stop');
+var shareBtn = document.querySelector('a#share');
+var stopBtn = document.querySelector('a#stop');
 shareBtn.onclick = startSharing;
 stopBtn.onclick = stopSharing;
 
