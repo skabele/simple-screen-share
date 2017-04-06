@@ -1,6 +1,6 @@
 #main {
-  width: 420px;
-  margin: 15px;
+    width: 460px;
+    margin: 15px;
 }
 
 #chat-messages {
@@ -11,4 +11,8 @@
 
 .chat-time {
     color: #ccc;
+}
+
+body {
+    background-color: #eee;
 }
