@@ -24,6 +24,8 @@
     "webrtc-adapter": "^3.2.0",
     "lodash": "^4.17.4",
     "loglevel": "^1.4.1",
-    "bootstrap": "^3.3.7"
+    "bootstrap": "^3.3.7",
+    "jquery": "^3.2.1",
+    "jquery-ui": "^1.12.1"
   }
 }

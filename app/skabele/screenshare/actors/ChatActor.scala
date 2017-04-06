@@ -15,7 +15,6 @@ trait ChatActor extends WsActor {
     case WsMessage(SEND_CHAT, SendChat(text)) =>
       context.system.eventStream.publish(ChatPublished(self, name, text))
 
-    case ChatPublished(sender, _, _) if sender == self =>
     case ChatPublished(_, _name, text) =>
       socket ! WsMessage(CHAT_MSG, ChatMsg(_name, text))
   }

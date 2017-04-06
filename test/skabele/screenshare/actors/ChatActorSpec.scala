@@ -35,7 +35,6 @@ class ChatActorSpec extends TestKit(ActorSystem("ChatActorSpec")) with ImplicitS
       val msg = "foo bar baz"
       chatActor ! WsMessage(SEND_CHAT, SendChat(msg))
       eventStreamProbe.expectMsg(duration, ChatPublished(chatActor, "Test", msg))
-      socket.expectNoMsg(duration)
     }
 
     "on ChatPublished send CHAT_MSG to socket" in new Helper {
@@ -43,13 +42,6 @@ class ChatActorSpec extends TestKit(ActorSystem("ChatActorSpec")) with ImplicitS
       val msg = "foo bar baz"
       chatActor ! ChatPublished(otherActor.ref, "Test", msg)
       socket.expectMsg(duration, WsMessage(CHAT_MSG, ChatMsg("Test", msg)))
-      socket.expectNoMsg(duration)
-    }
-
-    "if ChatPublished published by itself" in new Helper {
-      val msg = "foo bar baz"
-      chatActor ! ChatPublished(chatActor, "Test", msg)
-      socket.expectNoMsg(duration)
     }
 
   }

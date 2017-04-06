@@ -1,34 +1,58 @@
 @()
 
 @main("View shared desktop") {
+<script src="@routes.Assets.versioned("bower_components/jquery/dist/jquery.min.js")" type="text/javascript"></script>
+<script src="@routes.Assets.versioned("bower_components/jquery-ui/jquery-ui.min.js")" type="text/javascript"></script>
+<script src="@routes.Assets.versioned("bower_components/bootstrap/dist/js/bootstrap.min.js")" type="text/javascript"></script>
 <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/client.css")">
 
-<div class="container">
+<video id="remote-screen" autoplay muted></video>
 
-  <h1>View shared desktop</h1>
+<div id="main" class="panel panel-default" tabindex="-1">
+    <div class="panel-body">
 
-  <video id="remote-screen" autoplay muted></video>
+        <h1>View controlls</h1>
 
-  <form>
-    <div class="form-group">
-      <label for="chat-name">Chat name:</label>
-      <input id="chat-name" type="text" class="form-control" placeholder="Your chat name (mandatory)"></input>
+        <form>
+            <div class="form-group" id="chat-name-group">
+                <label for="chat-name">Chat name:</label>
+                <input id="chat-name" type="text" class="form-control"
+                       placeholder="Your chat name (cannot be changed when connected)" />
+            </div>
+            <div class="form-group">
+                <button type="button" class="btn btn-success" id="connect">
+                    <span class="glyphicon glyphicon-play"></span> Connect
+                </button>
+                <button type="button" class="btn btn-warning" id="disconnect">
+                    <span class="glyphicon glyphicon-stop"></span> Disconnect
+                </button>
+                <button type="button" class="btn btn-default" id="minimize-controlls">
+                    <span class="glyphicon glyphicon-resize-small"></span> Minimize controls
+                </button>
+                <button type="button" class="btn btn-default" id="expand-controlls">
+                    <span class="glyphicon glyphicon-resize-full"></span> Expand controls
+                </button>
+            </div>
+            <div class="form-group">
+                <input id="chat-input" type="text" class="form-control" placeholder="Message to be send to chat" />
+            </div>
+            <div class="form-group">
+                <button type="button" class="btn btn-info" class="form-control" id="send-chat">
+                    <span class="glyphicon glyphicon-pencil"></span> Send chat
+                </button>
+            </div>
+            <div class="form-group">
+                <div class="well" id="chat-messages">
+                </div>
+            </div>
+        </form>
     </div>
-    <div class="form-group">
-      <a class="btn btn-success" id="connect" href="#"><span class="glyphicon glyphicon-play"></span> Connect</a>
-      <a class="btn btn-warning" id="disconnect"  href="#" disabled><span class="glyphicon glyphicon-stop"></span> Disconnect</a>
-    </div>
-    <div class="form-group">
-      <textarea id="chat-input" type="text" class="form-control" placeholder="Message to be send to chat" rows="2" cols="53"></textarea>
-    </div>
-    <div class="form-group">
-      <a class="btn btn-info" class="form-control" id="send-chat" disabled><span class="glyphicon glyphicon-pencil"></span> Send chat</a>
-    </div>
-    <div class="form-group">
-      <textarea id="chat-messages" class="form-control" disabled placeholder="Chat messages" rows="20" cols="53"></textarea>
-    </div>
-  </form>
-
-  <script src="@routes.Assets.versioned("javascripts/client.js")" type="text/javascript"></script>
 </div>
+
+<script src="@routes.Assets.versioned("javascripts/client.js")" type="text/javascript"></script>
+<script>
+$("#main").draggable({
+  });
+</script>
+
 }

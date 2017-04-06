@@ -9,7 +9,7 @@ import skabele.screenshare.WithLogger
 class HomeController @Inject() extends Controller with WithLogger {
 
   def index = Action { implicit request =>
-    if (request.remoteAddress == "127.0.0.1") {
+    if (request.remoteAddress == "127.0.0.1" || request.remoteAddress == "0:0:0:0:0:0:0:1") {
       Ok(views.html.sharedDesktop())
     } else {
       Ok(views.html.client())

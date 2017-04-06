@@ -1,7 +1,14 @@
-video#mirror, video#streamed {
-  max-width: 100%;
-  width: 320px;
+#main {
+  width: 420px;
+  margin: 15px;
 }
 
-textarea {
+#chat-messages {
+    min-height: 200px;
+    max-height: 400px;
+    overflow-y:scroll;
+}
+
+.chat-time {
+    color: #ccc;
 }
