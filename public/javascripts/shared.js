@@ -55,7 +55,7 @@ function renderChatMessages() {
     chatMessagesDiv.innerHTML = _.join(
         _.map(chatMessages, function(message) {
             return '<span class="chat-time">' + message.receivedAt.toString().split(" ")[4] + '</span>'
-                +  ' <strong>' + message.name + '</strong> ' + message.text;
+                +  ' <strong>' + he.encode(message.name) + '</strong> ' + he.encode(message.text);
         }),  ' <br>\n'
     );
 }

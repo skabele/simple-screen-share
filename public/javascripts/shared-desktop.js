@@ -39,7 +39,7 @@ function connectedClientsChanged() {
         listOfConnected.innerHTML =
             '<strong>Connected clients (' + count + ') :</strong> ' +
             _.join(_.map(clients, function (client) {
-                return client.name;
+                return he.encode(client.name);
             }), ', ')
         ;
     } else {
