@@ -32,6 +32,7 @@ class ScreenShareActor(override val socket: ActorRef) extends ChatActor {
       } else {
         isReady = true
         name = _name
+        clients.get(_name).foreach(_ ! NameAlreadyTaken())
         context.system.eventStream.publish(ScreenReadyToShare(self, name, isResponse = false))
       }
 
@@ -42,7 +43,7 @@ class ScreenShareActor(override val socket: ActorRef) extends ChatActor {
       clients.get(clientName).foreach(_ ! Session(session))
 
     case ClientReadyToListen(ref, clientName, isResponse) =>
-      if (clients.isDefinedAt(clientName)) {
+      if (clients.isDefinedAt(clientName) || clientName == name) {
         ref ! NameAlreadyTaken()
       } else {
         clients(clientName) = ref

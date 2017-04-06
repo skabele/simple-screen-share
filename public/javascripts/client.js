@@ -107,20 +107,25 @@ function onWSMessage(message) {
         case "CHAT_MSG":
             addChatMessage(message.data);
             break;
+
         case "SERVER_ERROR":
             log.error("Server reports error:", message.data.text);
             break;
+
         case "NAME_ALREADY_TAKEN":
             alert("This chat name is already taken - please choose another one");
             disconnect();
             break;
+
         case "SCREEN_LEFT":
             chatMessagesDiv.value += 'Screen disconnected\n';
             terminateWebRtc();
             break;
+
         case "SCREEN_READY":
             log.info("SCREEN_READY");
             break;
+
         case "RTC_SESSION_DESCRIPTION":
             if (!pc) {
                 createPeerConnection();
@@ -128,6 +133,7 @@ function onWSMessage(message) {
             pc.setRemoteDescription(new RTCSessionDescription(message.data));
             doAnswer();
             break;
+
         case "RTC_ICE_CANDIDATE":
             if (pc === null) {
                 createPeerConnection();
@@ -135,6 +141,7 @@ function onWSMessage(message) {
             var candidate = new RTCIceCandidate(message.data);
             pc.addIceCandidate(candidate);
             break;
+
         default:
             log.warn("Unexpected message type received", message);
     }
