@@ -340,7 +340,7 @@ function onLoad() {
     updateUiConnected();
     shareBtn.disabled = true;
     window.setTimeout(function(){
-        if (!document.querySelector('#bistri-screen-sharing-installed')) {
+        if (!document.querySelector('#simple-screen-share-extension-installed')) {
             log.error("Crome extension not installed");
             document.querySelector('#extension-not-found').classList.remove('hidden');
         } else {
