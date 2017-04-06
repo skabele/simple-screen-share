@@ -168,6 +168,11 @@ function onWSMessage(message) {
             log.error("Server reports error:", message.data.text);
             break;
 
+        case "SCREEN_ALREADY_CONNECTED":
+            alert("There already is connected sharing session (in another browser, window, or tab?). Please close it first.");
+            stopSharing();
+            break;
+
         case "CLIENT_READY":
             name = message.data.clientName;
             if (!clients[name]) {
