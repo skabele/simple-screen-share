@@ -109,6 +109,10 @@ function streamReceived(stream) {
 }
 
 function startSharing() {
+    if(_.trim(chatName.value) === "") {
+        alert("Chat name can not be empty");
+        return;
+    }
     requestId = Math.random();
     window.postMessage({requestId: requestId, data: ["screen", "window", "tab"]}, "*");
 

@@ -59,6 +59,10 @@ function updateUiConnected() {
 }
 
 function connect() {
+    if(_.trim(chatName.value) === "") {
+        alert("Chat name can not be empty");
+        return;
+    }
     socket = openWebSocket();
     updateUiConnected();
 }
