@@ -13,14 +13,14 @@ class HomeControllerSpec extends PlaySpec with OneAppPerTest {
       val result = route(app, FakeRequest(GET, "/")).get
       status(result) mustBe OK
       contentType(result) mustBe Some("text/html")
-      contentAsString(result) must include ("<h1>Simple Screen Share</h1>")
+      contentAsString(result) must include ("Simple Screen Share")
     }
 
     "render the index page for Master when requesting from other host" in {
       val result = route(app, FakeRequest(GET, "/", FakeHeaders(), AnyContentAsEmpty, remoteAddress = "some.io")).get
       status(result) mustBe OK
       contentType(result) mustBe Some("text/html")
-      contentAsString(result) must include ("<h1>View controlls</h1>")
+      contentAsString(result) must include ("View controlls")
     }
 
   }
